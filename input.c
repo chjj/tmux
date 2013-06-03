@@ -1392,10 +1392,14 @@ input_csi_dispatch_sgr(struct input_ctx *ictx)
 	int			 n, m;
 	u_char			 attr;
 
+	//struct grid_cell *gattr = &ictx->wp->screen->grid->gattr;
+
 	if (ictx->param_list_len == 0) {
 		attr = gc->attr;
 		memcpy(gc, &grid_default_cell, sizeof *gc);
 		gc->attr |= (attr & GRID_ATTR_CHARSET);
+		//gattr->bg = gc->bg;
+		//gattr->flags = gc->flags;
 		return;
 	}
 
@@ -1527,6 +1531,9 @@ input_csi_dispatch_sgr(struct input_ctx *ictx)
 			break;
 		}
 	}
+
+	//gattr->bg = gc->bg;
+	//gattr->flags = gc->flags;
 }
 
 /* DCS terminator (ST) received. */

@@ -96,6 +96,8 @@ grid_create(u_int sx, u_int sy, u_int hlimit)
 
 	gd->linedata = xcalloc(gd->sy, sizeof *gd->linedata);
 
+	memcpy(&gd->gattr, &grid_default_cell, sizeof(struct grid_cell));
+
 	return (gd);
 }
 
@@ -230,7 +232,7 @@ grid_expand_line(struct grid *gd, u_int py, u_int sx)
 
 	gl->celldata = xrealloc(gl->celldata, sx, sizeof *gl->celldata);
 	for (xx = gl->cellsize; xx < sx; xx++)
-		grid_put_cell(gd, xx, py, &grid_default_cell);
+		grid_put_cell(gd, xx, py, DEFAULT_CELL(gd));
 	gl->cellsize = sx;
 }
 
@@ -289,6 +291,7 @@ grid_clear(struct grid *gd, u_int px, u_int py, u_int nx, u_int ny)
 	if (nx == 0 || ny == 0)
 		return;
 
+// #ifndef USE_XTERM
 	if (px == 0 && nx == gd->sx) {
 		grid_clear_lines(gd, py, ny);
 		return;
@@ -300,16 +303,24 @@ grid_clear(struct grid *gd, u_int px, u_int py, u_int nx, u_int ny)
 		return;
 
 	for (yy = py; yy < py + ny; yy++) {
+#ifdef USE_XTERM
+		grid_expand_line(gd, yy, px + nx);
+#endif
+
 		if (px >= gd->linedata[yy].cellsize)
 			continue;
+
+#ifndef USE_XTERM
 		if (px + nx >= gd->linedata[yy].cellsize) {
 			gd->linedata[yy].cellsize = px;
 			continue;
 		}
+#endif
+
 		for (xx = px; xx < px + nx; xx++) {
 			if (xx >= gd->linedata[yy].cellsize)
 				break;
-			grid_put_cell(gd, xx, yy, &grid_default_cell);
+			grid_put_cell(gd, xx, yy, DEFAULT_CELL(gd));
 		}
 	}
 }
@@ -401,7 +412,7 @@ grid_move_cells(struct grid *gd, u_int dx, u_int px, u_int py, u_int nx)
 	for (xx = px; xx < px + nx; xx++) {
 		if (xx >= dx && xx < dx + nx)
 			continue;
-		grid_put_cell(gd, xx, py, &grid_default_cell);
+		grid_put_cell(gd, xx, py, DEFAULT_CELL(gd));
 	}
 }
 

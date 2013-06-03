@@ -709,6 +709,7 @@ tty_cmd_insertcharacter(struct tty *tty, const struct tty_ctx *ctx)
 
 	tty_cursor_pane(tty, ctx, ctx->ocx, ctx->ocy);
 
+	tty_colours(tty, &wp->screen->grid->gattr);
 	if (tty_term_has(tty->term, TTYC_ICH) ||
 	    tty_term_has(tty->term, TTYC_ICH1))
 		tty_emulate_repeat(tty, TTYC_ICH, TTYC_ICH1, ctx->num);
@@ -732,6 +733,7 @@ tty_cmd_deletecharacter(struct tty *tty, const struct tty_ctx *ctx)
 
 	tty_cursor_pane(tty, ctx, ctx->ocx, ctx->ocy);
 
+	tty_colours(tty, &wp->screen->grid->gattr);
 	if (tty_term_has(tty->term, TTYC_DCH) ||
 	    tty_term_has(tty->term, TTYC_DCH1))
 		tty_emulate_repeat(tty, TTYC_DCH, TTYC_DCH1, ctx->num);
@@ -769,6 +771,7 @@ tty_cmd_insertline(struct tty *tty, const struct tty_ctx *ctx)
 	tty_region_pane(tty, ctx, ctx->orupper, ctx->orlower);
 	tty_cursor_pane(tty, ctx, ctx->ocx, ctx->ocy);
 
+	tty_colours(tty, &ctx->wp->screen->grid->gattr);
 	tty_emulate_repeat(tty, TTYC_IL, TTYC_IL1, ctx->num);
 }
 
@@ -787,6 +790,7 @@ tty_cmd_deleteline(struct tty *tty, const struct tty_ctx *ctx)
 	tty_region_pane(tty, ctx, ctx->orupper, ctx->orlower);
 	tty_cursor_pane(tty, ctx, ctx->ocx, ctx->ocy);
 
+	tty_colours(tty, &ctx->wp->screen->grid->gattr);
 	tty_emulate_repeat(tty, TTYC_DL, TTYC_DL1, ctx->num);
 }
 
@@ -800,6 +804,7 @@ tty_cmd_clearline(struct tty *tty, const struct tty_ctx *ctx)
 
 	tty_cursor_pane(tty, ctx, 0, ctx->ocy);
 
+	tty_colours(tty, &s->grid->gattr);
 	if (tty_pane_full_width(tty, ctx) && tty_term_has(tty->term, TTYC_EL))
 		tty_putcode(tty, TTYC_EL);
 	else
@@ -816,6 +821,7 @@ tty_cmd_clearendofline(struct tty *tty, const struct tty_ctx *ctx)
 
 	tty_cursor_pane(tty, ctx, ctx->ocx, ctx->ocy);
 
+	tty_colours(tty, &s->grid->gattr);
 	if (tty_pane_full_width(tty, ctx) && tty_term_has(tty->term, TTYC_EL))
 		tty_putcode(tty, TTYC_EL);
 	else
@@ -854,6 +860,7 @@ tty_cmd_reverseindex(struct tty *tty, const struct tty_ctx *ctx)
 	tty_region_pane(tty, ctx, ctx->orupper, ctx->orlower);
 	tty_cursor_pane(tty, ctx, ctx->ocx, ctx->orupper);
 
+	tty_colours(tty, &ctx->wp->screen->grid->gattr);
 	tty_putcode(tty, TTYC_RI);
 }
 
@@ -902,6 +909,7 @@ tty_cmd_clearendofscreen(struct tty *tty, const struct tty_ctx *ctx)
 	tty_region_pane(tty, ctx, 0, screen_size_y(s) - 1);
 	tty_cursor_pane(tty, ctx, ctx->ocx, ctx->ocy);
 
+	tty_colours(tty, &s->grid->gattr);
 	if (tty_pane_full_width(tty, ctx) && tty_term_has(tty->term, TTYC_EL)) {
 		tty_putcode(tty, TTYC_EL);
 		if (ctx->ocy != screen_size_y(s) - 1) {
@@ -935,6 +943,7 @@ tty_cmd_clearstartofscreen(struct tty *tty, const struct tty_ctx *ctx)
 	tty_region_pane(tty, ctx, 0, screen_size_y(s) - 1);
 	tty_cursor_pane(tty, ctx, 0, 0);
 
+	tty_colours(tty, &s->grid->gattr);
 	if (tty_pane_full_width(tty, ctx) && tty_term_has(tty->term, TTYC_EL)) {
 		for (i = 0; i < ctx->ocy; i++) {
 			tty_putcode(tty, TTYC_EL);
@@ -962,6 +971,7 @@ tty_cmd_clearscreen(struct tty *tty, const struct tty_ctx *ctx)
 	tty_region_pane(tty, ctx, 0, screen_size_y(s) - 1);
 	tty_cursor_pane(tty, ctx, 0, 0);
 
+	tty_colours(tty, &s->grid->gattr);
 	if (tty_pane_full_width(tty, ctx) && tty_term_has(tty->term, TTYC_EL)) {
 		for (i = 0; i < screen_size_y(s); i++) {
 			tty_putcode(tty, TTYC_EL);
@@ -1435,6 +1445,9 @@ tty_colours(struct tty *tty, const struct grid_cell *gc)
 	if (!bg_default && (bg != tc->bg ||
 	    ((flags & GRID_FLAG_BG256) != (tc->flags & GRID_FLAG_BG256))))
 		tty_colours_bg(tty, gc);
+
+	tty->client->session->curw->window->active->screen->grid->gattr.bg = gc->bg;
+	tty->client->session->curw->window->active->screen->grid->gattr.flags = gc->flags;
 }
 
 void
@@ -1566,6 +1579,9 @@ save_bg:
 	tc->bg = bg;
 	tc->flags &= ~GRID_FLAG_BG256;
 	tc->flags |= gc->flags & GRID_FLAG_BG256;
+
+	tty->client->session->curw->window->active->screen->grid->gattr.bg = tc->bg;
+	tty->client->session->curw->window->active->screen->grid->gattr.flags = tc->flags;
 }
 
 int

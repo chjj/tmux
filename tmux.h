@@ -744,6 +744,7 @@ struct grid {
 	u_int	hlimit;
 
 	struct grid_line *linedata;
+	struct grid_cell gattr;
 };
 
 /* Option data structures. */
@@ -2015,6 +2016,15 @@ char	*grid_string_cells(struct grid *, u_int, u_int, u_int,
 void	 grid_duplicate_lines(
 	     struct grid *, u_int, struct grid *, u_int, u_int);
 u_int	 grid_reflow(struct grid *, struct grid *, u_int);
+struct client *grid_to_client(struct grid *);
+
+#define USE_XTERM
+/* example: grid_put_cell(gd, xx, py, DEFAULT_CELL(gd)); */
+#ifdef USE_XTERM
+#define DEFAULT_CELL(gd) (&(gd)->gattr)
+#else
+#define DEFAULT_CELL(gd) (&grid_default_cell)
+#endif
 
 /* grid-cell.c */
 u_int	 grid_cell_width(const struct grid_cell *);
